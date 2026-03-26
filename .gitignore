@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.env
+.venv/
+venv/
+.idea/
+
+# Runtime artifacts
+chroma_db/
+data/raw/
+data/golden_unverified.jsonl
+cache.db
+*.db
+mlruns/
+*.log
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+

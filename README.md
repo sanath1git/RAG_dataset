@@ -1,0 +1,126 @@
+# Gemini RAG Dataset Pipeline
+
+Production-style, end-to-end implementation of your Gemini-first architecture:
+
+1. Transcript ingestion and normalization (with Hindi fallback translation)
+2. Embedding + local Chroma indexing (`text-embedding-004`)
+3. Query-time RAG with Gemini reranking + SQLite cache
+4. Golden dataset generation with structured JSON output
+5. RAGAS evaluation with Gemini as judge
+
+## Project Structure
+
+```text
+config/
+  settings.py
+utils/
+  logging_utils.py
+  rate_limiter.py
+  text_chunking.py
+ingestion/
+  fetch_transcripts.py
+embedding/
+  build_index.py
+rag/
+  pipeline.py
+dataset/
+  generate_questions.py
+eval/
+  run_ragas.py
+```
+
+## 1) Setup
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+Edit `.env` and set:
+
+```bash
+GEMINI_API_KEY=your_key_from_aistudio.google.com
+```
+
+## 2) Ingest transcripts
+
+Default curated list (3Blue1Brown + Hindi channels with fallback translation):
+
+```powershell
+python ingestion/fetch_transcripts.py
+```
+
+Custom list:
+
+```powershell
+python ingestion/fetch_transcripts.py --video my_video=YOUTUBE_ID --video another=YOUTUBE_ID
+```
+
+## 3) Build embedding index
+
+```powershell
+python embedding/build_index.py --collection nn_rag --chunk-size 512 --overlap 50
+```
+
+This uses:
+
+- `task_type=RETRIEVAL_DOCUMENT` at indexing time
+- `models/text-embedding-004`
+- idempotent `upsert` into local Chroma
+
+## 4) Query the RAG pipeline
+
+```powershell
+python rag/pipeline.py "What is backpropagation and why is it useful?"
+```
+
+This pipeline does:
+
+1. `RETRIEVAL_QUERY` embedding
+2. Chroma retrieval
+3. Gemini reranking (JSON score array)
+4. final answer generation from top chunks
+5. SQLite caching (`cache.db`)
+
+## 5) Generate unverified golden dataset
+
+```powershell
+python dataset/generate_questions.py --collection nn_rag --output-file data/golden_unverified.jsonl --shuffle
+```
+
+Each chunk generates exactly 3 QA pairs (factual, conceptual, applied).
+
+## 6) Human verification
+
+Move reviewed records into `data/golden.jsonl` and set:
+
+```json
+{"verified_by_human": true}
+```
+
+Only verified rows are used in evaluation.
+
+## 7) Run RAGAS evaluation
+
+```powershell
+python eval/run_ragas.py --golden-path data/golden.jsonl --collection nn_rag --output-csv data/eval_scores.csv
+```
+
+Metrics:
+
+- `faithfulness`
+- `answer_relevancy`
+- `context_recall`
+
+All metrics are wired to Gemini judge via `langchain-google-genai`.
+
+## Operational Notes
+
+- Keep `.env` out of source control.
+- Rate pacing is configurable in `.env` to match your free-tier budget.
+- This code is designed to be rerunnable safely:
+  - transcript files can be overwritten with `--overwrite`
+  - embedding index uses `upsert`
+  - query layer caches answers by question hash

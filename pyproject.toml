@@ -1,0 +1,22 @@
+[project]
+name = "gemini-rag-dataset-pipeline"
+version = "0.1.0"
+description = "End-to-end Gemini-based RAG dataset and evaluation pipeline."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "chromadb>=0.5.5",
+  "datasets>=2.20.0",
+  "deep-translator>=1.11.4",
+  "google-generativeai>=0.8.5",
+  "langchain-google-genai>=2.1.4",
+  "pandas>=2.2.2",
+  "pydantic>=2.8.2",
+  "pydantic-settings>=2.5.2",
+  "ragas>=0.2.12",
+  "youtube-transcript-api>=0.6.2",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
