@@ -19,8 +19,8 @@ class Settings(BaseSettings):
 
     project_root: Path = Field(default=PROJECT_ROOT)
     gemini_api_key: str = Field(..., min_length=1)
-    generation_model: str = "gemini-1.5-flash"
-    embedding_model: str = "models/text-embedding-004"
+    generation_model: str = "models/gemini-flash-lite-latest"
+    embedding_model: str = "models/gemini-embedding-001"
     chroma_db_path: Path = Path("./chroma_db")
     data_dir: Path = Path("./data")
     raw_data_dir: Path = Path("./data/raw")
